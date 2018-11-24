@@ -13,10 +13,12 @@ type GeneCfg struct {
 	PopCap int
 	MaxGenerations int
 	CullRate float64
+	CullReprieve float64
 	MutateRate float64
 	MutateDeviation float64
 	Delay time.Duration
 	StatPeriod int
+	RandomCityPos bool
 }
 
 type GeneStats struct {
@@ -64,7 +66,12 @@ func RunGenetic(cfg GeneCfg) (statChan chan GeneStats, stopChan chan int) {
 
 func makePopulation(cfg GeneCfg) Population {
 	pop := make(Population, cfg.PopCap)
-	cities := MakeRandoCities(cfg.CityCount)
+	var cities []City
+	if cfg.RandomCityPos {
+		cities = MakeRandoCities(cfg.CityCount)
+	} else {
+		cities = MakeCircleCities(cfg.CityCount)
+	}
 	for i:=0; i<len(pop); i++ {
 		pop[i] = RandomRoadmap(cities)
 	}
@@ -87,7 +94,19 @@ func (p Population) rank() Population {
 func (p Population)cull(cfg GeneCfg) Population {
 	cutoffIndex := int((1 - cfg.CullRate) * float64(cfg.PopCap))
 
-	return p[0:cutoffIndex]
+	keeper := p[0:cutoffIndex]
+	remainder := p[cutoffIndex:]
+
+	reprieveCount := int(cfg.CullReprieve * float64(cfg.PopCap))
+	reprievePerm := randGen.Perm(len(remainder))
+	reprieve := make([]RoadMap, reprieveCount)
+	for i:=0; i<reprieveCount; i++ {
+		reprieve[i] = remainder[reprievePerm[i]]
+	}
+
+	keeper = append(keeper, reprieve...)
+
+	return keeper
 }
 
 func (p Population)shuffle() Population {

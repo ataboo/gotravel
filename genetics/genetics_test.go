@@ -1,7 +1,6 @@
 package genetics
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 )
@@ -167,38 +166,4 @@ func TestMutate(t *testing.T) {
 	if len(p) != cfg.PopCap {
 		t.Error("Unexpected population", p, cfg.PopCap)
 	}
-}
-
-func TestBlah(t *testing.T) {
-	cfg := GeneCfg{
-		CityCount: 200,
-		PopCap: 1000,
-		MaxGenerations: 20000,
-		CullRate: 0.95,
-		MutateRate: 0.75,
-		MutateDeviation: 0.25,
-	}
-
-	stats, stop := RunGenetic(cfg)
-	var stat GeneStats
-	chanFor:
-	for {
-		select {
-		case stat = <-stats:
-			if stat.Generation < 0 {
-				break chanFor
-			}
-
-			fmt.Printf("%d  |  %.2f of %.2f\n", stat.Generation, stat.BestMap.Cost(), stat.BestMap.BestCost())
-			if stat.BestMap.Solved() {
-				fmt.Printf("Solved in %d!\n", stat.Generation)
-				stop <- 0
-				break chanFor
-			}
-		}
-	}
-
-	//fmt.Printf("Best solution: %.2f, Perfect: %.2f\n", stat.BestMap.Cost(), stat.BestMap.BestCost())
-
-
 }

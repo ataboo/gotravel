@@ -8,14 +8,8 @@ import (
 	"log"
 )
 
-//var cities []gen.City
-
-//var testMap gen.RoadMap
 
 func main() {
-	//cities = gen.MakeCircleCities(24)
-	//testMap = gen.RandomRoadmap(cities)
-
 	gtk.Init(nil)
 	initWindow()
 	gtk.Main()
@@ -58,20 +52,21 @@ func initWindow() {
 
 func clickRefresh() {
 	fmt.Println("Clicked Refresh!")
-	//bestMap.Shuffle()
-	//da.QueueDraw()
-	go runGenes()
+	//go runRandom()
+	go runCircle()
 }
 
-func runGenes() {
+func runRandom() {
 	cfg := gen.GeneCfg{
-		CityCount: 80,
-		PopCap: 200,
+		CityCount: 50,
+		PopCap: 1000,
 		MaxGenerations: 10000000,
 		CullRate: 0.8,
-		MutateRate: 0.10,
+		CullReprieve: 0.2,
+		MutateRate: 0.5,
 		MutateDeviation: 0.5,
 		StatPeriod: 100,
+		RandomCityPos: true,
 		//Delay: time.Millisecond * 100.0,
 	}
 
@@ -87,11 +82,41 @@ func runGenes() {
 
 			fmt.Printf("%d  |  %.2f\n", stat.Generation, stat.BestMap.Cost())
 			rendering.ShowRoadmap(&stat.BestMap)
-			//if stat.BestMap.Solved() {
-			//	fmt.Printf("Solved in %d!\n", stat.Generation)
-			//	stop <- 0
-			//	break chanFor
-			//}
+		}
+	}
+}
+
+func runCircle() {
+	cfg := gen.GeneCfg{
+		CityCount: 50,
+		PopCap: 1000,
+		MaxGenerations: 10000000,
+		CullRate: 0.8,
+		CullReprieve: 0.2,
+		MutateRate: 0.50,
+		MutateDeviation: 0.5,
+		StatPeriod: 100,
+		RandomCityPos: false,
+		//Delay: time.Millisecond * 100.0,
+	}
+
+	stats, stop := gen.RunGenetic(cfg)
+	var stat gen.GeneStats
+chanFor:
+	for {
+		select {
+		case stat = <-stats:
+			if stat.Generation < 0 {
+				break chanFor
+			}
+
+			fmt.Printf("%d  |  %.2f\n", stat.Generation, stat.BestMap.Cost())
+			rendering.ShowRoadmap(&stat.BestMap)
+			if stat.BestMap.Solved() {
+				fmt.Printf("Solved in %d!\n", stat.Generation)
+				stop <- 0
+				break chanFor
+			}
 		}
 	}
 }
